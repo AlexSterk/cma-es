@@ -7,6 +7,7 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
+# noinspection PyAttributeOutsideInit
 class CMA(object):
     """
     Covariance Matrix Adaptation Evolution Strategy (CMA-ES) implemented with TensorFlow v2.
@@ -30,6 +31,7 @@ class CMA(object):
         termination_no_effect=1e-8,
         store_trace=False,
         callback_function=None,
+        max_evaluations=1e6,
     ):
         """
         Args:
@@ -118,6 +120,7 @@ class CMA(object):
         self.store_trace = store_trace
         self.callback_fn = callback_function
         self.termination_criterion_met = False
+        self.max_evaluations = max_evaluations
 
         self._initialized = False
 
@@ -126,6 +129,7 @@ class CMA(object):
             raise ValueError('Already initialized - call reset method to start over')
 
         self.generation = 0
+        self.evaluations = 0
         self.dimension = len(self.initial_solution)
         self._enforce_bounds = self.enforce_bounds is not None
         self.trace = []
@@ -240,7 +244,8 @@ class CMA(object):
             penalty = 0.
             if self._enforce_bounds:
                 x_corr = tf.clip_by_value(x, self.clip_value_min, self.clip_value_max)
-                penalty = tf.norm(x - x_corr)**2
+                # We do not work with penalties
+                # penalty = tf.norm(x - x_corr)**2
                 x = x_corr
 
             # -------------------------------------------------
@@ -248,6 +253,7 @@ class CMA(object):
             # -------------------------------------------------
             # Evaluate and sort solutions
             f_x = self.fitness_fn(x) + penalty
+            self.evaluations += self.population_size
             self.x_sorted = tf.gather(x, tf.argsort(f_x))
 
             if self.store_trace:
@@ -372,8 +378,10 @@ class CMA(object):
         prev_max_D = tf.reduce_max(tf.linalg.diag_part(self._prev_D))
         tol_x_up_diff = tf.abs(self.σ * max_D - self._prev_sigma * prev_max_D)
         tol_x_up = tf.greater(tol_x_up_diff, 1e4)
+        
+        evaluations_met = self.evaluations >= self.max_evaluations
 
-        do_terminate = no_effect_axis or no_effect_coord or condition_cov or tol_x_up
+        do_terminate = no_effect_axis or no_effect_coord or condition_cov or tol_x_up or evaluations_met
 
         if not return_details:
             return do_terminate
@@ -385,6 +393,7 @@ class CMA(object):
                     no_effect_coord=bool(no_effect_coord.numpy()),
                     condition_cov=bool(condition_cov.numpy()),
                     tol_x_up=bool(tol_x_up.numpy()),
+                    evaluations_met=evaluations_met
                 )
             )
 
@@ -402,4 +411,5 @@ class CMA(object):
             'B': self.B.read_value().numpy(),
             'D': self.D.read_value().numpy(),
             'population': self.x_sorted.numpy(),
+            'evaluations': self.evaluations
         })
