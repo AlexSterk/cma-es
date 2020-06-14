@@ -95,7 +95,7 @@ class CMA(object):
             raise ValueError(f'Initial step size must be a number greater than zero')
         elif not callable(fitness_function):
             raise ValueError(f'Fitness function must be callable')
-        elif population_size is not None and population_size <= 4:
+        elif population_size is not None and population_size < 4:
             raise ValueError(f'Population size must be at least 4')
         elif enforce_bounds is not None and not isinstance(enforce_bounds, (np.ndarray, list)):
             raise ValueError('Bounds must be a list or numpy array')
