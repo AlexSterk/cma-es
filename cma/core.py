@@ -253,7 +253,7 @@ class CMA(object):
             # -------------------------------------------------
             # Evaluate and sort solutions
             f_x = self.fitness_fn(x) + penalty
-            self.evaluations += self.population_size
+            self.evaluations += self.λ
             self.x_sorted = tf.gather(x, tf.argsort(f_x))
 
             if self.store_trace:
