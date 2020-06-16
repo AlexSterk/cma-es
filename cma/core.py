@@ -143,7 +143,7 @@ class CMA(object):
         if self.population_size is not None:
             self.λ = tf.constant(self.population_size, dtype=tf.float64)
         else:
-            self.λ = tf.floor(tf.math.log(self.N) * 3 + 4)
+            self.λ = tf.floor(tf.math.log(self.N) * 3) + 4
         # Shape of the population of solutions
         self.shape = tf.cast((self.λ, self.N), tf.int32)
         # Number of surviving individuals from one generation to the next
