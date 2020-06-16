@@ -31,7 +31,7 @@ class CMA(object):
         termination_no_effect=1e-8,
         store_trace=False,
         callback_function=None,
-        max_evaluations=1e6,
+        max_evaluations=None,
     ):
         """
         Args:
@@ -379,7 +379,7 @@ class CMA(object):
         tol_x_up_diff = tf.abs(self.σ * max_D - self._prev_sigma * prev_max_D)
         tol_x_up = tf.greater(tol_x_up_diff, 1e4)
         
-        evaluations_met = self.evaluations >= self.max_evaluations
+        evaluations_met = self.max_evaluations is not None and self.evaluations >= self.max_evaluations
 
         do_terminate = no_effect_axis or no_effect_coord or condition_cov or tol_x_up or evaluations_met
 
