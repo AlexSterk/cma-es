@@ -129,7 +129,7 @@ class CMA(object):
             raise ValueError('Already initialized - call reset method to start over')
 
         self.generation = 0
-        self.evaluations = 0
+        self.evaluations = tf.constant(0, dtype=tf.float64)
         self.dimension = len(self.initial_solution)
         self._enforce_bounds = self.enforce_bounds is not None
         self.trace = []
@@ -411,5 +411,6 @@ class CMA(object):
             'B': self.B.read_value().numpy(),
             'D': self.D.read_value().numpy(),
             'population': self.x_sorted.numpy(),
-            'evaluations': self.evaluations.numpy()
+            'evaluations': self.evaluations.numpy(),
+            'best_fitness': self.best_fitness()
         })
