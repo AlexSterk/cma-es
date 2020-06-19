@@ -32,6 +32,7 @@ class CMA(object):
         store_trace=False,
         callback_function=None,
         max_evaluations=None,
+        vtr=None
     ):
         """
         Args:
@@ -121,6 +122,7 @@ class CMA(object):
         self.callback_fn = callback_function
         self.termination_criterion_met = False
         self.max_evaluations = max_evaluations
+        self.vtr = vtr
 
         self._initialized = False
 
@@ -380,8 +382,9 @@ class CMA(object):
         tol_x_up = tf.greater(tol_x_up_diff, 1e4)
         
         evaluations_met = self.max_evaluations is not None and self.evaluations >= self.max_evaluations
+        vtr_reached = self.vtr is not None and self.best_fitness() <= self.vtr
 
-        do_terminate = no_effect_axis or no_effect_coord or condition_cov or tol_x_up or evaluations_met
+        do_terminate = no_effect_axis or no_effect_coord or condition_cov or tol_x_up or evaluations_met or vtr_reached
 
         if not return_details:
             return do_terminate
