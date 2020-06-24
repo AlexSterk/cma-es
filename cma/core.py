@@ -7,6 +7,27 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
+
+def mutate_cias(x):
+    N = x.shape[0]
+    m = tf.constant([float("Inf")], dtype=tf.float64)
+    indices = None
+    for i in range(N // 2):
+        for j in range(i + 1, N // 2):
+            sub = x[2 * i:2 * i + 2] - x[2 * j:2 * j + 2]
+            norm = tf.norm(sub)
+            if norm < m:
+                indices = tf.constant([[2 * i], [2 * i + 1], [2 * j], [2 * j + 1]])
+            m = tf.minimum(m, norm)
+    dir = tf.concat([tf.random.uniform((1,), 0., .1, tf.float64), tf.random.uniform((1,), -.1, .1, tf.float64)], 0)
+    if x[indices[0][0]] < x[indices[2][0]]:
+        upd = tf.concat([-dir, dir], 0)
+    else:
+        upd = tf.concat([dir, -dir], 0)
+    mutated = tf.clip_by_value(tf.tensor_scatter_nd_add(x, indices, upd), 0, 1)
+
+    return mutated
+
 # noinspection PyAttributeOutsideInit
 class CMA(object):
     """
@@ -32,7 +53,8 @@ class CMA(object):
         store_trace=False,
         callback_function=None,
         max_evaluations=None,
-        vtr=None
+        vtr=None,
+        mutation_rate=0
     ):
         """
         Args:
@@ -123,6 +145,7 @@ class CMA(object):
         self.termination_criterion_met = False
         self.max_evaluations = max_evaluations
         self.vtr = vtr
+        self.mutation_rate = mutation_rate
 
         self._initialized = False
 
@@ -265,6 +288,8 @@ class CMA(object):
             x_diff = (self.x_sorted - self.m)
             x_mean = tf.reduce_sum(tf.multiply(x_diff, self.weights), axis=0)
             m = self.m + x_mean
+            if np.random.random() < self.mutation_rate:
+                m = mutate_cias(m)
 
             # -----------------------------------
             # (3) Adapting the Covariance Matrix
